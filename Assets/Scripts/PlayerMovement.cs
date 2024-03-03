@@ -59,26 +59,17 @@ public class PlayerMovement : MonoBehaviour
             MyInput();
             SpeedControl();
             rb.drag = groundDrag;
-        }
-        else
-        {
-            rb.drag = 0;
-        }
-
-    }
-
-    private void FixedUpdate()
-    {
-        if (grounded)
-        {
             WalkingMovement();
         }
         else
         {
+            MyInput();
+            SpeedControl();
+            rb.drag = 2;
             FlyingMovement();
         }
-        
     }
+
 
     private void MyInput()
     {
@@ -86,12 +77,12 @@ public class PlayerMovement : MonoBehaviour
         verticalInput = Input.GetAxisRaw("Vertical");
 
         // when to jump
-        if (Input.GetKey(jumpKey) && readyToJump && grounded)
+        if (Input.GetKey(jumpKey) && readyToJump)
         {
             readyToJump = false;
 
             Jump();
-            Invoke("ResetJump", 0.25f);
+            Invoke("ResetJump", 0.05f);
         }
 
     }
@@ -107,7 +98,14 @@ public class PlayerMovement : MonoBehaviour
     private void FlyingMovement()
     {
         //reduce gravity
-        rb.drag = 6;
+        if (verticalInput == 0)
+        {
+            verticalInput = 1;
+        }
+
+        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+
+        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
     }
 
     private void SpeedControl()

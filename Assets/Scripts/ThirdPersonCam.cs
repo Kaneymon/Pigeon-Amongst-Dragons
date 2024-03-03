@@ -19,6 +19,8 @@ public class ThirdPersonCam : MonoBehaviour
     public GameObject topDownCam;
 
     public CameraStyle currentStyle;
+    public bool isFlying = true;
+
     public enum CameraStyle
     {
         Basic,
@@ -33,6 +35,47 @@ public class ThirdPersonCam : MonoBehaviour
     }
 
     private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            isFlying = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.Mouse1))
+        {
+            isFlying = false;
+        }
+
+        if (isFlying)
+        {
+            FlyingCam();
+        }
+        else
+        {
+            WalkingCam();
+        }
+    }
+
+    private void FlyingCam()
+    {
+        //rotate the player object so its Y axis is pointing at the cameras Z axis.
+        //rotate the player so its z axis 
+
+        Vector3 camXRot = transform.rotation.eulerAngles;
+        float playerYaw =  80 + camXRot.x;
+        float playerPitch = 0;
+        
+
+        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
+        orientation.forward = viewDir.normalized;
+
+        float horizontalInput = Input.GetAxis("Horizontal");
+        if (horizontalInput != 0)
+            playerPitch = Mathf.Lerp(playerObj.transform.rotation.eulerAngles.y, playerObj.transform.rotation.eulerAngles.y + 30 * horizontalInput, Time.deltaTime * rotationSpeed);
+
+        playerObj.localEulerAngles = new Vector3 (playerYaw, playerPitch, playerObj.transform.localEulerAngles.z);
+    }
+
+    private void WalkingCam()
     {
         // switch styles
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchCameraStyle(CameraStyle.Basic);
@@ -62,6 +105,8 @@ public class ThirdPersonCam : MonoBehaviour
             playerObj.forward = dirToCombatLookAt.normalized;
         }
     }
+
+
 
     private void SwitchCameraStyle(CameraStyle newStyle)
     {
