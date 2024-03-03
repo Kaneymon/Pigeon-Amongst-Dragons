@@ -12,15 +12,14 @@ public class PlayerMovement : MonoBehaviour
     public float groundDrag;
 
     public float jumpForce;
-    public float jumpCooldown;
-    public float airMultiplier;
+
     bool readyToJump;
 
     [HideInInspector] public float walkSpeed;
+    [HideInInspector] public float sprintSpeed;
 
     [Header("Keybinds")]
     public KeyCode jumpKey = KeyCode.Space;
-    public KeyCode glideKey = KeyCode.LeftShift;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -42,6 +41,9 @@ public class PlayerMovement : MonoBehaviour
         rb.freezeRotation = true;
 
         readyToJump = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
@@ -49,27 +51,33 @@ public class PlayerMovement : MonoBehaviour
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
 
-        MyInput();
+
 
         // handle drag
         if (grounded)
         {
-            //walk
-            rb.drag = groundDrag;
+            MyInput();
             SpeedControl();
+            rb.drag = groundDrag;
         }
         else
         {
-            //fly controls
             rb.drag = 0;
-            SpeedControlAir();
         }
 
     }
 
     private void FixedUpdate()
     {
-        MovePlayer();
+        if (grounded)
+        {
+            WalkingMovement();
+        }
+        else
+        {
+            FlyingMovement();
+        }
+        
     }
 
     private void MyInput()
@@ -78,60 +86,48 @@ public class PlayerMovement : MonoBehaviour
         verticalInput = Input.GetAxisRaw("Vertical");
 
         // when to jump
-        if (Input.GetKey(jumpKey) && readyToJump)
+        if (Input.GetKey(jumpKey) && readyToJump && grounded)
         {
             readyToJump = false;
 
             Jump();
+            Invoke("ResetJump", 0.25f);
+        }
 
-            Invoke(nameof(ResetJump), jumpCooldown);
-        }
-        //when to glide.
-        if (Input.GetKey(glideKey) && !grounded)
-        {
-            Glide();
-            flySpeed = 150;
-        }
-        else
-        {
-            flySpeed = 10;
-        }
     }
 
-    private void MovePlayer()
+    private void WalkingMovement()
     {
         // calculate movement direction
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        // on ground
-        if (grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+    }
 
-        // in air
-        else if (!grounded)
-            rb.AddForce(moveDirection.normalized * flySpeed * 10f * airMultiplier, ForceMode.Force);
+    private void FlyingMovement()
+    {
+        //reduce gravity
+        rb.drag = 6;
     }
 
     private void SpeedControl()
     {
-        Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-
-        // limit velocity if needed
-        if (flatVel.magnitude > moveSpeed)
+        float maxspeed = 0;
+        if (grounded)
         {
-            Vector3 limitedVel = flatVel.normalized * moveSpeed;
-            rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
+            maxspeed = moveSpeed;
         }
-    }
+        else
+        {
+            maxspeed = flySpeed;
+        }
 
-    private void SpeedControlAir()
-    {
         Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
         // limit velocity if needed
-        if (flatVel.magnitude > flySpeed)
+        if (flatVel.magnitude > maxspeed)
         {
-            Vector3 limitedVel = flatVel.normalized * moveSpeed;
+            Vector3 limitedVel = flatVel.normalized * maxspeed;
             rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
         }
     }
@@ -146,14 +142,5 @@ public class PlayerMovement : MonoBehaviour
     private void ResetJump()
     {
         readyToJump = true;
-    }
-
-    private void Glide()
-    {
-        //disable gravity?
-        //increase drag?
-        //or just add constant force upwards, slightly less than gravity?
-
-        rb.AddForce(transform.up * 2 *  rb.mass, ForceMode.Force);
     }
 }
