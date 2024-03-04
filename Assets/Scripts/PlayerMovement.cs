@@ -64,7 +64,7 @@ public class PlayerMovement : MonoBehaviour
         {
             MyInput();
             SpeedControl();
-            rb.drag = 2;
+            rb.drag = 0.05f;
             FlyingMovement();
         }
     }
@@ -106,7 +106,7 @@ public class PlayerMovement : MonoBehaviour
 
         moveDirection = orientation.forward * 1 + orientation.right * horizontalInput;
 
-        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+        rb.AddForce(moveDirection.normalized * flySpeed * 10f, ForceMode.Force);
     }
 
     private void SpeedControl()

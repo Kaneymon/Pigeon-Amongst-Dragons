@@ -51,22 +51,22 @@ public class ThirdPersonCam : MonoBehaviour
 
     private void FlyingCam()
     {
-        //rotate the player object so its Y axis is pointing at the cameras Z axis.
-        //rotate the player so its z axis 
-
-        Vector3 camXRot = transform.rotation.eulerAngles;
-        float playerYaw =  80 + camXRot.x;
-        float playerPitch = 0;
-        
-
+        // rotate orientation
         Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
         orientation.forward = viewDir.normalized;
 
-        float horizontalInput = Input.GetAxis("Horizontal");
-        if (horizontalInput != 0)
-            playerPitch = Mathf.Lerp(playerObj.transform.rotation.eulerAngles.y, playerObj.transform.rotation.eulerAngles.y + 30 * horizontalInput, Time.deltaTime * rotationSpeed);
+        // roate player object
+        if (currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
+        {
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticalInput = 1;
+            Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        playerObj.localEulerAngles = new Vector3 (playerYaw, playerPitch, playerObj.transform.localEulerAngles.z);
+            if (inputDir != Vector3.zero)
+                playerObj.forward = Vector3.Slerp(transform.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
+
+            playerObj.rotation = Quaternion.Euler(playerObj.rotation.eulerAngles.x, playerObj.rotation.eulerAngles.y, 35 * -horizontalInput);
+        }
     }
 
     private void WalkingCam()
