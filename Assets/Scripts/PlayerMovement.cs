@@ -32,7 +32,7 @@ public class PlayerMovement : MonoBehaviour
     float verticalInput;
 
     Vector3 moveDirection;
-    public Transform playerObj;
+
     Rigidbody rb;
 
     private void Start()
@@ -99,6 +99,10 @@ public class PlayerMovement : MonoBehaviour
     private void FlyingMovement()
     {
         //reduce gravity
+        if (verticalInput == 0)
+        {
+            verticalInput = 1;
+        }
 
         moveDirection = orientation.forward * 1 + orientation.right * horizontalInput;
 
