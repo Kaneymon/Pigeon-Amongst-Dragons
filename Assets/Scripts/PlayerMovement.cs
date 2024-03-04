@@ -9,10 +9,16 @@ public class PlayerMovement : MonoBehaviour
     public float moveSpeed;
     public float flySpeed;
 
+    [Header("FlightForces")]
+    public AnimationCurve aoaLiftCurve;
+    public AnimationCurve aoaThrustCurve;
+    public float liftCoef;
+    public float dragCoef;
+
+
+
     public float groundDrag;
-
     public float jumpForce;
-
     bool readyToJump;
 
     [HideInInspector] public float walkSpeed;
@@ -20,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Keybinds")]
     public KeyCode jumpKey = KeyCode.Space;
+    public KeyCode Glide = KeyCode.LeftShift;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -27,6 +34,7 @@ public class PlayerMovement : MonoBehaviour
     public bool grounded;
 
     public Transform orientation;
+    public Transform playerObj;
 
     float horizontalInput;
     float verticalInput;
@@ -53,7 +61,7 @@ public class PlayerMovement : MonoBehaviour
 
 
         // handle drag
-        if (grounded)
+        if (false)
         {
             MyInput();
             SpeedControl();
@@ -104,9 +112,27 @@ public class PlayerMovement : MonoBehaviour
             verticalInput = 1;
         }
 
-        moveDirection = orientation.forward * 1 + orientation.right * horizontalInput;
+        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        rb.AddForce(moveDirection.normalized * flySpeed * 10f, ForceMode.Force);
+
+        var aoa = AngleOfAttackFromTransform(playerObj);
+        Vector3 lift = orientation.up * ((liftCoef * Mathf.Pow(rb.velocity.z, 2)) / 2);
+        float drag = ((dragCoef * Mathf.Pow(rb.velocity.z, 2)) / 2);
+
+
+        rb.AddForce((moveDirection * flySpeed * 10f) - (drag * orientation.forward), ForceMode.Force);                  //forward backward forces
+        rb.AddForce(lift , ForceMode.Force);   //up down forces
+
+    }
+
+    private float AngleOfAttackFromTransform(Transform t)
+    {
+        float aoa = t.eulerAngles.x;
+        if (aoa > 360-90)
+        {
+            aoa = aoa - 360;
+        }
+        return -aoa;
     }
 
     private void SpeedControl()
@@ -118,7 +144,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            maxspeed = flySpeed;
+            return;
         }
 
         Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
