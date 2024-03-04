@@ -6,6 +6,7 @@ public class ThirdPersonCam : MonoBehaviour
 {
     [Header("References")]
     public Transform orientation;
+    public Transform flightOrientation;
     public Transform player;
     public Transform playerObj;
     public Rigidbody rb;
@@ -57,22 +58,36 @@ public class ThirdPersonCam : MonoBehaviour
 
     private void FlyingCam()
     {
-        //rotate the player object so its Y axis is pointing at the cameras Z axis.
-        //rotate the player so its z axis 
-
-        Vector3 camXRot = transform.rotation.eulerAngles;
-        float playerYaw =  80 + camXRot.x;
-        float playerPitch = 0;
-        
-
-        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
-        orientation.forward = viewDir.normalized;
-
         float horizontalInput = Input.GetAxis("Horizontal");
-        if (horizontalInput != 0)
-            playerPitch = Mathf.Lerp(playerObj.transform.rotation.eulerAngles.y, playerObj.transform.rotation.eulerAngles.y + 30 * horizontalInput, Time.deltaTime * rotationSpeed);
+        float verticalInput = 1;
 
-        playerObj.localEulerAngles = new Vector3 (playerYaw, playerPitch, playerObj.transform.localEulerAngles.z);
+        Vector3 viewDir = playerObj.position - new Vector3(transform.position.x, player.position.y, transform.position.z);//change the y to transform for wild stuff
+
+        flightOrientation.forward = viewDir.normalized;
+        Vector3 inputDir = flightOrientation.forward * verticalInput + flightOrientation.right * horizontalInput;
+        playerObj.up = Vector3.Slerp(playerObj.up, inputDir.normalized, Time.deltaTime * rotationSpeed);
+
+
+
+
+        float pitch = 0;
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            pitch = -2f;
+        }
+        else if (Input.GetKey(KeyCode.Space))
+        {
+            pitch = -0.4f;
+        }
+        else if (Input.GetAxis("Mouse Y") != 0)
+        {
+            pitch = -(Input.GetAxis("Mouse Y"));
+        }
+
+        playerObj.transform.Rotate(pitch, 0, 0);
+
+
     }
 
     private void WalkingCam()

@@ -27,12 +27,13 @@ public class PlayerMovement : MonoBehaviour
     bool grounded;
 
     public Transform orientation;
+    public Transform flyingOrientation;
 
     float horizontalInput;
     float verticalInput;
 
     Vector3 moveDirection;
-
+    public Transform playerObj;
     Rigidbody rb;
 
     private void Start()
@@ -98,14 +99,10 @@ public class PlayerMovement : MonoBehaviour
     private void FlyingMovement()
     {
         //reduce gravity
-        if (verticalInput == 0)
-        {
-            verticalInput = 1;
-        }
 
-        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        moveDirection = playerObj.up * 1 + playerObj.right * horizontalInput;
 
-        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+        rb.AddForce(moveDirection.normalized * flySpeed * 10f, ForceMode.Force);
     }
 
     private void SpeedControl()
