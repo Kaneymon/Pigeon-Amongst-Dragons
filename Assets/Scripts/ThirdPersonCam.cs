@@ -6,7 +6,6 @@ public class ThirdPersonCam : MonoBehaviour
 {
     [Header("References")]
     public Transform orientation;
-    public Transform flightOrientation;
     public Transform player;
     public Transform playerObj;
     public Rigidbody rb;
@@ -21,7 +20,7 @@ public class ThirdPersonCam : MonoBehaviour
 
     public CameraStyle currentStyle;
     public bool isFlying = true;
-
+    public PlayerMovement movement;
     public enum CameraStyle
     {
         Basic,
@@ -37,65 +36,59 @@ public class ThirdPersonCam : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Mouse0))
+        if (isFlying && movement.grounded)
         {
-            isFlying = true;
-        }
-        else if (Input.GetKeyDown(KeyCode.Mouse1))
-        {
-            isFlying = false;
+            SwitchToWalk();
         }
 
-        if (isFlying)
+        if (!isFlying && !movement.grounded)
         {
+            SwitchToFly();
+        }
+        if (!movement.grounded)
+        {
+            isFlying = true;
             FlyingCam();
         }
         else
         {
+            isFlying = false;
             WalkingCam();
         }
     }
 
+
+    void SwitchToFly()
+    {
+        playerObj.up = orientation.forward;
+    }
+
+    void SwitchToWalk()
+    {
+        playerObj.up = orientation.up;
+    }
+
+
     private void FlyingCam()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = 1;
+        // rotate orientation
+        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
+        orientation.forward = viewDir.normalized;
 
-        Vector3 viewDir = playerObj.position - new Vector3(transform.position.x, player.position.y, transform.position.z);//change the y to transform for wild stuff
-
-        flightOrientation.forward = viewDir.normalized;
-        Vector3 inputDir = flightOrientation.forward * verticalInput + flightOrientation.right * horizontalInput;
-        playerObj.up = Vector3.Slerp(playerObj.up, inputDir.normalized, Time.deltaTime * rotationSpeed);
-
-
-
-
-        float pitch = 0;
-
-        if (Input.GetKeyDown(KeyCode.Space))
+        // roate player object
+        if (currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
         {
-            pitch = -2f;
-        }
-        else if (Input.GetKey(KeyCode.Space))
-        {
-            pitch = -0.4f;
-        }
-        else if (Input.GetAxis("Mouse Y") != 0)
-        {
-            pitch = -(Input.GetAxis("Mouse Y"));
-        }
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticalInput = Input.GetAxis("Vertical");
+            Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        playerObj.transform.Rotate(pitch, 0, 0);
-
-
+            if (inputDir != Vector3.zero)
+                playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
+        }
     }
 
     private void WalkingCam()
     {
-        // switch styles
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchCameraStyle(CameraStyle.Basic);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchCameraStyle(CameraStyle.Combat);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchCameraStyle(CameraStyle.Topdown);
 
         // rotate orientation
         Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
@@ -112,13 +105,6 @@ public class ThirdPersonCam : MonoBehaviour
                 playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
         }
 
-        else if (currentStyle == CameraStyle.Combat)
-        {
-            Vector3 dirToCombatLookAt = combatLookAt.position - new Vector3(transform.position.x, combatLookAt.position.y, transform.position.z);
-            orientation.forward = dirToCombatLookAt.normalized;
-
-            playerObj.forward = dirToCombatLookAt.normalized;
-        }
     }
 
 

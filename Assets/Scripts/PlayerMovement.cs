@@ -24,10 +24,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground Check")]
     public float playerHeight;
     public LayerMask whatIsGround;
-    bool grounded;
+    public bool grounded;
 
     public Transform orientation;
-    public Transform flyingOrientation;
 
     float horizontalInput;
     float verticalInput;
@@ -51,7 +50,6 @@ public class PlayerMovement : MonoBehaviour
     {
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
-
 
 
         // handle drag
@@ -88,6 +86,8 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
+
+
     private void WalkingMovement()
     {
         // calculate movement direction
@@ -100,9 +100,9 @@ public class PlayerMovement : MonoBehaviour
     {
         //reduce gravity
 
-        moveDirection = playerObj.up * 1 + playerObj.right * horizontalInput;
+        moveDirection = orientation.forward * 1 + orientation.right * horizontalInput;
 
-        rb.AddForce(moveDirection.normalized * flySpeed * 10f, ForceMode.Force);
+        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
     }
 
     private void SpeedControl()
