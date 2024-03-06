@@ -48,6 +48,7 @@ public class planePhysicsController : MonoBehaviour
     [Header("animation")]
     [SerializeField] Animator anim;
 
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
@@ -59,33 +60,26 @@ public class planePhysicsController : MonoBehaviour
     {
         GroundChecking();
         SpeedControl();
+        myflightInput();
+        PitchRollTurn();
+        LiftAndThrust();
+        AngleOfAttack();
 
-        if (grounded)
-        {
-            WalkingMovement();
-        }
-        else
-        {
-            myflightInput();
-            PitchRollTurn();
-            LiftAndThrust();
-            AngleOfAttack();
-        }
+
     }
 
 
     private void LiftAndThrust()
     {
-        
-        Vector3 moveDirection = characterBody.forward;
-        float liftForce = ((liftCoef.Evaluate(angleOfAttack) * Mathf.Pow(rb.velocity.z, 2)) / 2) - (liftCoef.Evaluate(angleOfAttack) * liftDragCoef * Mathf.Pow(rb.velocity.y, 2)) / 2;
-        lift = characterBody.up * liftForce;
+        //thrust
+        Vector3 moveDirection = rb.transform.forward;
+        thrustDrag = (dragCoef * Mathf.Pow(rb.velocity.z, 2) / 2);
+        rb.AddForce((moveDirection * thrustForce) - (thrustDrag * moveDirection), ForceMode.Force);
 
-        thrustDrag = ((dragCoef * Mathf.Pow(rb.velocity.z, 2)) / 2);
-
-
-        rb.AddForce((moveDirection * thrustForce) - (thrustDrag * moveDirection), ForceMode.Force);                  //forward backward forces
-        rb.AddForce(lift, ForceMode.Acceleration);   //up down forces
+        //lift
+        float liftForce = (liftCoef.Evaluate(angleOfAttack) * liftDragCoef * Mathf.Pow(rb.velocity.z, 2)) / 2;
+        lift = rb.transform.up * (liftForce);
+        rb.AddForce(lift, ForceMode.Force);   //up down forces
     }
 
 
@@ -93,14 +87,11 @@ public class planePhysicsController : MonoBehaviour
 
         Vector3 moveDirection = characterBody.forward;
         rb.AddForce((moveDirection * flapForce), ForceMode.Impulse);
-
     }
 
     private void AngleOfAttack()
     {
-        angleOfAttack = Vector3.Angle(transform.forward, rb.velocity.normalized);
-
-        print(angleOfAttack);
+        angleOfAttack = rb.transform.rotation.eulerAngles.x; 
     }
 
     private void PitchRollTurn()
@@ -146,25 +137,11 @@ public class planePhysicsController : MonoBehaviour
         if (Input.GetKeyDown(Flap))
         {
             FlapWings();
-            anim.SetBool("isFlapping", true);
-        }
-        if (Input.GetKeyUp(Flap))
-        {
-            FlapWings();
-            anim.SetBool("isFlapping", false);
-        }
-        if (Input.GetKeyDown(bomb))
-        {
-            Bomb();
         }
     }
 
-    private void Bomb()
-    {
-        
-    }
 
-    private void SpeedControl() //just because i kept hitting walls and launcing into space.  may be able to remove if i just add the walking controller.
+    private void SpeedControl() 
     {
         Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
@@ -177,30 +154,6 @@ public class planePhysicsController : MonoBehaviour
     }
 
 
-    //-----------------------------------------
-    //walking related functions
-
-    float verticalInput = 0;
-    float horizontalInput = 0;
-    private void WalkingMovement()
-    {
-
-        //get movement input
-        if (Input.GetKey(forwards)) { verticalInput = 1; }
-        else if (Input.GetKey(backwards)) { verticalInput = -1; }
-        else { verticalInput = 0; }
-
-        if (Input.GetKey(rightStrafe)) { horizontalInput = 1; }
-        else if (Input.GetKey(leftStrafe)) { horizontalInput = -1; }
-        else { horizontalInput = 0; }
-
-        // calculate movement direction
-        Vector3 moveDirection = characterBody.forward * verticalInput + characterBody.right * horizontalInput;
-
-        //apply movement direction to character.
-        rb.AddForce(moveDirection.normalized * moveSpeedGround * 10f, ForceMode.Force);
-    }
-
     [Header("groundCheck")]
     public bool grounded = false;
     public float playerHeight = 1;
@@ -210,6 +163,5 @@ public class planePhysicsController : MonoBehaviour
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
     }
-
 
 }
