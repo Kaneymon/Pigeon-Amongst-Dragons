@@ -20,7 +20,7 @@ public class planeSoundsManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        windPlayer.volume = Mathf.Clamp( (rb.velocity.magnitude/maxSpeed) * 1, 0f, 1f);
-        windPlayer.pitch = Mathf.Clamp(0.8f + (rb.velocity.magnitude/maxSpeed ) * 0.9f, 0.8f, 1.8f);
+        windPlayer.volume =  Mathf.Lerp(windPlayer.volume, Mathf.Clamp( (rb.velocity.magnitude/maxSpeed) * 1, 0f, 1f), Time.deltaTime);
+        windPlayer.pitch = Mathf.Lerp( windPlayer.pitch, Mathf.Clamp(0.8f + (rb.velocity.magnitude/maxSpeed ) * 0.9f, 0.8f, 1.8f), Time.deltaTime);
     }
 }

@@ -61,7 +61,7 @@ public class PlayerMovement : MonoBehaviour
 
 
         // handle drag
-        if (false)
+        if (grounded)
         {
             MyInput();
             SpeedControl();
@@ -70,10 +70,10 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            MyInput();
-            SpeedControl();
-            rb.drag = 0.05f;
-            FlyingMovement();
+            //MyInput();
+            //SpeedControl();
+            //rb.drag = 0.05f;
+            //FlyingMovement();
         }
     }
 

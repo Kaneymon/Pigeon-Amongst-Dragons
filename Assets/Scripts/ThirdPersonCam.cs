@@ -20,7 +20,7 @@ public class ThirdPersonCam : MonoBehaviour
 
     public CameraStyle currentStyle;
     public bool isFlying = true;
-    public PlayerMovement movement;
+    public planePhysicsController movement;
     public enum CameraStyle
     {
         Basic,
@@ -37,37 +37,11 @@ public class ThirdPersonCam : MonoBehaviour
     private void Update()
     {
 
-        if (!movement.grounded)
-        {
-            isFlying = true;
-            FlyingCam();
-        }
-        else
-        {
-            isFlying = false;
+
             WalkingCam();
-        }
+
     }
 
-    private void FlyingCam()
-    {
-        // rotate orientation
-        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
-        orientation.forward = viewDir.normalized;
-
-        // roate player object
-        if (currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
-        {
-            float horizontalInput = Input.GetAxis("Horizontal");
-            float verticalInput = 1;
-            Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
-
-            if (inputDir != Vector3.zero)
-                playerObj.forward = Vector3.Slerp(transform.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
-
-            playerObj.rotation = Quaternion.Euler(playerObj.rotation.eulerAngles.x, playerObj.rotation.eulerAngles.y, 35 * -horizontalInput);
-        }
-    }
 
     private void WalkingCam()
     {
@@ -77,30 +51,12 @@ public class ThirdPersonCam : MonoBehaviour
         orientation.forward = viewDir.normalized;
 
         // roate player object
-        if (currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
-        {
-            float horizontalInput = Input.GetAxis("Horizontal");
-            float verticalInput = Input.GetAxis("Vertical");
-            Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
+        Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-            if (inputDir != Vector3.zero)
-                playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
-        }
-
+        if (inputDir != Vector3.zero)
+            playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
     }
 
-
-
-    private void SwitchCameraStyle(CameraStyle newStyle)
-    {
-        combatCam.SetActive(false);
-        thirdPersonCam.SetActive(false);
-        topDownCam.SetActive(false);
-
-        if (newStyle == CameraStyle.Basic) thirdPersonCam.SetActive(true);
-        if (newStyle == CameraStyle.Combat) combatCam.SetActive(true);
-        if (newStyle == CameraStyle.Topdown) topDownCam.SetActive(true);
-
-        currentStyle = newStyle;
-    }
 }

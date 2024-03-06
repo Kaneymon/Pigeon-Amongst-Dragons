@@ -17,16 +17,17 @@ public class planePhysicsController : MonoBehaviour
 
     [Header("viewable variables")]
     public float thrustDrag;
-    public float liftDrag;
     public float angleOfAttack;
+    public Vector3 lift;
 
     [Header("pitch and roll variables")]
     public float pitchTorque = 1;
     public float rollTorque = 1;
     public float turnTorque = 1;
 
-    [Header("Input")]
+    [Header("Input Flight")]
      KeyCode Flap = KeyCode.Space;
+     KeyCode fly = KeyCode.LeftShift;
      KeyCode bomb = KeyCode.Mouse0;
      KeyCode yawLeft = KeyCode.Q;
      KeyCode yawRight = KeyCode.E;
@@ -34,6 +35,15 @@ public class planePhysicsController : MonoBehaviour
      KeyCode rollRight = KeyCode.D;
      KeyCode pitchUp = KeyCode.W;
      KeyCode pitchDown = KeyCode.S;
+
+    [Header("Input Ground")]
+    KeyCode leftStrafe = KeyCode.A;
+    KeyCode rightStrafe = KeyCode.D;
+    KeyCode forwards = KeyCode.W;
+    KeyCode backwards = KeyCode.S;
+
+    [Header("grounded Variables")]
+    public float moveSpeedGround = 8;
 
     [Header("animation")]
     [SerializeField] Animator anim;
@@ -47,25 +57,30 @@ public class planePhysicsController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        myInput();
-        PitchRollTurn();
+        GroundChecking();
+        SpeedControl();
+
+        if (grounded)
+        {
+            WalkingMovement();
+        }
+        else
+        {
+            myflightInput();
+            PitchRollTurn();
+            LiftAndThrust();
+            AngleOfAttack();
+        }
     }
 
-    private void FixedUpdate()
-    {
-
-        LiftAndThrust();
-        AngleOfAttack();
-
-    }
 
     private void LiftAndThrust()
     {
-
+        
         Vector3 moveDirection = characterBody.forward;
+        float liftForce = ((liftCoef.Evaluate(angleOfAttack) * Mathf.Pow(rb.velocity.z, 2)) / 2) - (liftCoef.Evaluate(angleOfAttack) * liftDragCoef * Mathf.Pow(rb.velocity.y, 2)) / 2;
+        lift = characterBody.up * liftForce;
 
-        Vector3 lift = characterBody.up * ((liftCoef.Evaluate(angleOfAttack) * Mathf.Pow(rb.velocity.z, 2)) / 2);
-        liftDrag = ((liftDragCoef * Mathf.Pow(rb.velocity.y, 2)) / 2);
         thrustDrag = ((dragCoef * Mathf.Pow(rb.velocity.z, 2)) / 2);
 
 
@@ -83,7 +98,7 @@ public class planePhysicsController : MonoBehaviour
 
     private void AngleOfAttack()
     {
-        angleOfAttack = characterBody.localRotation.eulerAngles.x-60;
+        angleOfAttack = Vector3.Angle(transform.forward, rb.velocity.normalized);
 
         print(angleOfAttack);
     }
@@ -126,7 +141,7 @@ public class planePhysicsController : MonoBehaviour
         }
     }
 
-    private void myInput() 
+    private void myflightInput() 
     {
         if (Input.GetKeyDown(Flap))
         {
@@ -160,5 +175,41 @@ public class planePhysicsController : MonoBehaviour
             rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
         }
     }
+
+
+    //-----------------------------------------
+    //walking related functions
+
+    float verticalInput = 0;
+    float horizontalInput = 0;
+    private void WalkingMovement()
+    {
+
+        //get movement input
+        if (Input.GetKey(forwards)) { verticalInput = 1; }
+        else if (Input.GetKey(backwards)) { verticalInput = -1; }
+        else { verticalInput = 0; }
+
+        if (Input.GetKey(rightStrafe)) { horizontalInput = 1; }
+        else if (Input.GetKey(leftStrafe)) { horizontalInput = -1; }
+        else { horizontalInput = 0; }
+
+        // calculate movement direction
+        Vector3 moveDirection = characterBody.forward * verticalInput + characterBody.right * horizontalInput;
+
+        //apply movement direction to character.
+        rb.AddForce(moveDirection.normalized * moveSpeedGround * 10f, ForceMode.Force);
+    }
+
+    [Header("groundCheck")]
+    public bool grounded = false;
+    public float playerHeight = 1;
+    public LayerMask whatIsGround;
+    private void GroundChecking()
+    {
+        // ground check
+        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
+    }
+
 
 }
