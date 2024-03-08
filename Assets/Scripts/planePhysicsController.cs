@@ -47,7 +47,11 @@ public class planePhysicsController : MonoBehaviour
 
     [Header("animation")]
     [SerializeField] Animator anim;
-
+    [Header("bonusVariables")]
+    public float slomoTime = 1;
+    public float slomoTimeCooldown = 25;
+    public float BoostStaminUsage = 25;
+    public PlayerStats playerStats;
 
     private void Start()
     {
@@ -56,7 +60,7 @@ public class planePhysicsController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         GroundChecking();
         SpeedControl();
@@ -64,18 +68,47 @@ public class planePhysicsController : MonoBehaviour
         PitchRollTurn();
         LiftAndThrust();
         AngleOfAttack();
-
+        TriggerSloMo();
 
     }
 
+    private bool sloMoLock = false;
+    private void TriggerSloMo()
+    {
+        if (!Input.GetKeyDown(KeyCode.Mouse1) || sloMoLock)
+        {
+            return;
+        }
 
+        sloMoLock = true;
+        Time.timeScale = 0.25f;
+        pitchTorque *= 2;
+        rollTorque *= 2;
+        turnTorque *= 2;
+        Invoke("StopSlomo", slomoTime);
+    }
+
+    private void StopSlomo()
+    {
+        Time.timeScale = 1f;
+        pitchTorque /= 2;
+        rollTorque /= 2;
+        turnTorque /= 2;
+        Invoke("ResetSloMoLock", slomoTimeCooldown);
+    }
+    private void ResetSloMoLock()
+    {
+        sloMoLock = false;
+    }
+
+    private float currentSpeed = 0;
     private void LiftAndThrust()
     {
         //thrust
         Vector3 moveDirection = rb.transform.forward;
         thrustDrag = (dragCoef * Mathf.Pow(rb.velocity.z, 2) / 2);
-        rb.AddForce((moveDirection * thrustForce) - (thrustDrag * moveDirection), ForceMode.Force);
-
+        rb.AddForce((moveDirection * currentSpeed) - (thrustDrag * moveDirection), ForceMode.Force);
+        
         //lift
         float liftForce = (liftCoef.Evaluate(angleOfAttack) * liftDragCoef * Mathf.Pow(rb.velocity.z, 2)) / 2;
         lift = rb.transform.up * (liftForce);
@@ -84,14 +117,21 @@ public class planePhysicsController : MonoBehaviour
 
 
     private void FlapWings(){
-
+        if (playerStats.Stamina<=1)
+        {
+            return;
+        }
         Vector3 moveDirection = characterBody.forward;
-        rb.AddForce((moveDirection * flapForce), ForceMode.Impulse);
+        rb.AddForce((moveDirection * currentSpeed * 4), ForceMode.Force);
+        if (playerStats.TakeStamina(BoostStaminUsage * Time.deltaTime))
+        {
+            playerStats.TakeStamina(BoostStaminUsage * Time.deltaTime);
+        }
     }
 
     private void AngleOfAttack()
     {
-        angleOfAttack = rb.transform.rotation.eulerAngles.x; 
+        angleOfAttack = Vector3.SignedAngle(rb.velocity.normalized, characterBody.transform.forward, Vector3.forward); 
     }
 
     private void PitchRollTurn()
@@ -124,8 +164,6 @@ public class planePhysicsController : MonoBehaviour
             rb.AddTorque(characterBody.forward * -rollTorque, ForceMode.Force);
         }
 
-
-
         if (!Input.GetKeyDown(pitchUp))
         {
             rb.angularVelocity = Vector3.zero;
@@ -134,7 +172,7 @@ public class planePhysicsController : MonoBehaviour
 
     private void myflightInput() 
     {
-        if (Input.GetKeyDown(Flap))
+        if (Input.GetKey(Flap))
         {
             FlapWings();
         }
@@ -162,6 +200,17 @@ public class planePhysicsController : MonoBehaviour
     {
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
+        if (grounded)
+        {
+            rb.drag = 4;
+            currentSpeed = moveSpeedGround;
+        }
+        else
+        {
+            rb.drag = 1;
+            currentSpeed = thrustForce;
+        }
     }
+
 
 }
